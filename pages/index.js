@@ -3,7 +3,6 @@ import { ethers } from "ethers";
 import { useEffect, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import useWindowSize from "react-use/lib/useWindowSize";
 import Confetti from "react-confetti";
 import ProgressBar from "../components/ProgressBar";
 
@@ -13,13 +12,7 @@ export default function Home() {
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(false);
   const [progressPercentage, setProgressPercentage] = useState("0%");
-  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   const [confetti, setConfetti] = useState(false);
-  const { width, height } = useWindowSize();
-
-  useEffect(() => {
-    setWindowSize({ width: width, height: height });
-  }, [width, height]);
 
   //TOAST MESSAGES
   const updateMetadataMessage = (projectName) =>
@@ -107,8 +100,10 @@ export default function Home() {
   }, [collectionSize, progress]);
 
   return (
-    <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-pink-50 dark:from-slate-900 dark:to-neutral-900 h-full flex flex-col justify-center font-['Roboto']">
-      <div className="max-w-[1240px] w-full h-screen mx-auto px-4">
+    <div
+      className={`bg-gradient-to-r from-blue-50 via-indigo-50 to-pink-50 dark:from-slate-900 dark:to-neutral-900 h-full flex flex-col justify-center font-['Roboto']']`}
+    >
+      <div className="max-w-[1240px] w-full min-h-screen mx-auto px-4 flex flex-col">
         <h1 className="text-5xl pt-16 pb-10 md:pb-16 md:text-6xl font-archivo-black dark:text-white text-center ">
           <span className="text-indigo-500 dark:text-indigo-300">Refresh</span>{" "}
           your{" "}
@@ -178,7 +173,7 @@ export default function Home() {
             </p>
           </div>
         </div>
-        <div className="w-full absolute left-0 bottom-0 py-2 dark:text-white">
+        <div className="w-full mt-auto pt-12 dark:text-white">
           <p className="text-xs text-center text-gray-700 dark:text-white">
             This app is free to use and works on custom smart contracts (not
             created by OpenSea) deployed on the Ethereum network.
@@ -195,12 +190,7 @@ export default function Home() {
           </p>
         </div>
       </div>
-      <Confetti
-        width={windowSize.width}
-        height={windowSize.height}
-        recycle={false}
-        run={confetti}
-      />
+      <Confetti recycle={false} run={confetti} />
       <ToastContainer />
     </div>
   );
