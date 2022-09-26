@@ -103,6 +103,39 @@ export default function Home() {
     <div
       className={`bg-gradient-to-r from-blue-50 via-indigo-50 to-pink-50 dark:from-slate-900 dark:to-neutral-900 h-full flex flex-col justify-center font-['Roboto']']`}
     >
+      <Head>
+        <title>
+          NFT Metadata Refresher | Keep the NFT metadata on Opensea up-to-date
+          with ease!
+        </title>
+        <meta
+          property="og:title"
+          content="NFT Metadata Refresher | Keep the NFT metadata on Opensea up-to-date
+          with ease!"
+          key="title"
+        />
+        <meta
+          property="og:description"
+          content="Enter the Ethereum smart contract address of the collection whose
+          metadata you want to refresh."
+          key="description"
+        />
+
+        <meta name="viewport" content="initial-scale=1.0, width=device-width" />
+        <meta property="og:url" content="https://nftmetadatarefresher.com/" />
+        <meta
+          property="og:image"
+          content="https://rarefolknft.com/images/og-image.jpg"
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:image:alt" content="" />
+        <meta name="twitter:card" content="summary" />
+        <meta
+          name="twitter:image"
+          content="https://rarefolknft.com/images/twitter-image.jpg"
+        />
+      </Head>
+
       <div className="max-w-[1240px] w-full min-h-screen mx-auto px-4 flex flex-col">
         <h1 className="text-5xl pt-16 pb-10 md:pb-16 md:text-6xl font-archivo-black dark:text-white text-center ">
           <span className="text-indigo-500 dark:text-indigo-300">Refresh</span>{" "}
@@ -173,7 +206,7 @@ export default function Home() {
             </p>
           </div>
         </div>
-        <div className="w-full mt-auto pt-12 dark:text-white">
+        <div className="w-full mt-auto pt-6 dark:text-white">
           <p className="text-xs text-center text-gray-700 dark:text-white">
             This app is free to use and works on custom smart contracts (not
             created by OpenSea) deployed on the Ethereum network.
