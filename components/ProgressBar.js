@@ -9,7 +9,7 @@ const ProgressBar = ({ progressPercentage }) => {
   return (
     <div className="w-full h-6 bg-gray-200 rounded-full">
       <div
-        className="h-6 bg-indigo-500 rounded-full"
+        className="h-6 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full"
         style={{ width: progress }}
       ></div>
     </div>

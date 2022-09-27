@@ -3,16 +3,16 @@ import { ethers } from "ethers";
 import { useEffect, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Confetti from "react-confetti";
 import ProgressBar from "../components/ProgressBar";
+import { InformationCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 export default function Home() {
   const [collectionSize, setCollectionSize] = useState(0);
-  const [contractAddres, setContractAddres] = useState("");
+  const [contractAddress, setContractAddress] = useState("");
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(false);
   const [progressPercentage, setProgressPercentage] = useState("0%");
-  const [confetti, setConfetti] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
 
   //TOAST MESSAGES
   const updateMetadataMessage = (projectName) =>
@@ -30,8 +30,8 @@ export default function Home() {
 
   const errorMessage = (error) => toast.error(error);
 
-  //GET COLLECTION SIZE USING ETHERS
-  const getCollectionSizeFromContract = async () => {
+  //GET COLLECTION SIZE USING FROM THE BLOCKCHAIN
+  const getCollectionDetailsFromContract = async () => {
     try {
       const provider = new ethers.providers.AlchemyProvider(
         "homestead",
@@ -40,22 +40,22 @@ export default function Home() {
 
       const abi = [
         "function name() view returns (string)",
-        "event Transfer(address indexed src, address indexed dst, uint val)",
+        "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)",
       ];
 
-      const contract = new ethers.Contract(contractAddres, abi, provider);
+      const contract = new ethers.Contract(contractAddress, abi, provider);
 
       const transferEvents = await contract.queryFilter(
         contract.filters.Transfer(ethers.constants.AddressZero)
       );
 
-      const _tokenIds = transferEvents.map((transfer) => {
-        return parseInt(transfer.topics[3]);
+      const tokenIds = transferEvents.map((transfer) => {
+        return parseInt(transfer.args.tokenId);
       });
 
       const name = await contract.name();
 
-      return { totalSupply: _tokenIds.length, name: name, tokenIds: _tokenIds };
+      return { totalSupply: tokenIds.length, name, tokenIds };
     } catch (error) {
       console.log(error.toString());
       errorMessage("Please enter a valid Ethereum contract address");
@@ -63,7 +63,7 @@ export default function Home() {
   };
 
   const updateMetaData = async () => {
-    const result = await getCollectionSizeFromContract();
+    const result = await getCollectionDetailsFromContract();
     setLoading(true);
     if (result == undefined) {
       setLoading(false);
@@ -71,24 +71,36 @@ export default function Home() {
       setCollectionSize(result?.totalSupply);
       try {
         updateMetadataMessage(result?.name);
-        let _progress = 0;
-        for (let i = 0; i <= result?.totalSupply; i++) {
-          const url = `https://api.opensea.io/api/v1/asset/${contractAddres}/${result.tokenIds[i]}/?force_update=true`;
+        for (let i = 0; i < result?.totalSupply; i++) {
+          const url = `https://api.opensea.io/api/v1/asset/${contractAddress}/${result.tokenIds[i]}?force_update=true`;
           const response = await fetch(url);
           if (response.status == 200) {
-            _progress++;
-            setProgress(_progress);
+            setProgress(i);
+          } else {
+            try {
+              const url = `https://api.opensea.io/api/v1/asset/${contractAddress}/${result.tokenIds[i]}?force_update=true`;
+              const response = await fetch(url);
+              if (response.status == 200) {
+                setProgress(i);
+              }
+            } catch (error) {
+              console.log(error);
+            }
           }
-          setTimeout(() => {}, 250);
+          await new Promise((resolve) => {
+            setTimeout(() => {
+              resolve();
+            }, 350);
+          });
         }
         successMessage();
-        setConfetti(true);
       } catch (error) {
         console.log(error);
       }
     }
     setLoading(false);
-    setContractAddres("");
+    setContractAddress("");
+    setProgress(0);
   };
 
   useEffect(() => {
@@ -101,7 +113,7 @@ export default function Home() {
 
   return (
     <div
-      className={`bg-gradient-to-r from-blue-50 via-indigo-50 to-pink-50 dark:from-slate-900 dark:to-neutral-900 h-full flex flex-col justify-center font-['Roboto']']`}
+      className={`bg-gradient-to-r from-blue-50 via-indigo-50 to-pink-50 dark:from-slate-900 dark:to-neutral-900 h-full flex flex-col justify-center font-['Roboto']'] relative`}
     >
       <Head>
         <title>
@@ -116,23 +128,30 @@ export default function Home() {
         />
         <meta
           property="og:description"
-          content="Enter the Ethereum smart contract address of the collection whose
-          metadata you want to refresh."
+          content="NFT Metadata Refresher is a web application that updates the metadata of your whole ERC-721 collection on Opensea. It is built using Alchemy, Ethers and the Opensea API."
           key="description"
         />
 
         <meta name="viewport" content="initial-scale=1.0, width=device-width" />
-        <meta property="og:url" content="https://nftmetadatarefresher.com/" />
+        <meta property="og:url" content="https://nftmetadatarefresher.xyz/" />
         <meta
           property="og:image"
-          content="https://rarefolknft.com/images/og-image.jpg"
+          content="https://nftmetadatarefresher.xyz/ogimage.jpg"
         />
         <meta property="og:type" content="website" />
-        <meta property="og:image:alt" content="" />
+        <meta
+          property="og:image:alt"
+          content="screenshot of a web application"
+        />
         <meta name="twitter:card" content="summary" />
         <meta
           name="twitter:image"
-          content="https://rarefolknft.com/images/twitter-image.jpg"
+          content="https://nftmetadatarefresher.xyz/twitterimage.jpg"
+        />
+        <meta
+          name="twitter:title"
+          content="NFT Metadata Refresher | Keep the NFT metadata on Opensea up-to-date
+          with ease!"
         />
       </Head>
 
@@ -159,8 +178,8 @@ export default function Home() {
             className={`border mb-6 h-16 shadow-xl rounded-xl p-4 ${
               loading ? "dark:text-white" : ""
             }`}
-            value={contractAddres}
-            onChange={(event) => setContractAddres(event.target.value)}
+            value={contractAddress}
+            onChange={(event) => setContractAddress(event.target.value)}
             disabled={loading}
           />
 
@@ -206,7 +225,7 @@ export default function Home() {
             </p>
           </div>
         </div>
-        <div className="w-full mt-auto pt-6 dark:text-white">
+        <div className="w-full mt-auto pb-3 dark:text-white">
           <p className="text-xs text-center text-gray-700 dark:text-white">
             This app is free to use and works on custom smart contracts (not
             created by OpenSea) deployed on the Ethereum network.
@@ -223,7 +242,82 @@ export default function Home() {
           </p>
         </div>
       </div>
-      <Confetti recycle={false} run={confetti} />
+      <button
+        onClick={() => setInfoOpen(true)}
+        className="bg-indigo-500 text-xs cursor-pointer rounded-l-lg rounded-b-none shadow-lg absolute p-3 bottom-0 right-0 hover:bg-indigo-600"
+      >
+        <InformationCircleIcon className="h-6 w-6 text-white" />
+      </button>
+      {infoOpen ? (
+        <div
+          className={`absolute w-full min-h-screen inset-0 bg-gradient-to-r from-blue-50 via-indigo-50 to-pink-50 dark:from-slate-900 dark:to-neutral-900 text-black dark:text-white `}
+        >
+          <div className="max-w-[1240px] w-full min-h-screen mx-auto px-4  flex flex-col justify-center">
+            <button
+              onClick={() => setInfoOpen(false)}
+              className="dark:text-white text-black rounded-full ml-auto cursor-pointer mb-3 hover:animate-ping"
+            >
+              <XMarkIcon className="h-10 w-10" />
+            </button>
+            <h1 className="text-2xl font-bold font-archivo-black ">
+              What is NFT Metadata Refresher?
+            </h1>
+            <p className="mb-6">
+              NFT Metadata Refresher is a web application that updates the
+              metadata of your whole ERC-721 collection on Opensea. It is built
+              using{" "}
+              <a
+                className="font-bold underline "
+                href="https://alchemy.com/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Alchemy
+              </a>
+              ,{" "}
+              <a
+                className="font-bold underline "
+                href="https://docs.ethers.io/v5/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Ethers
+              </a>{" "}
+              and the{" "}
+              <a
+                className="font-bold underline "
+                href="https://docs.opensea.io/reference/api-overview"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Opensea API
+              </a>
+              .
+            </p>
+
+            <h1 className="text-2xl font-archivo-black font-bold">
+              How do I use it?
+            </h1>
+            <p className="mb-6">
+              Enter the smart contract address of an ERC-721 collection on the
+              Ethereum blockchain and hit the &quot;Refresh Metadata&quot;
+              button. Make sure to keep the browser tab open while you&apos;re
+              refreshing metadata.
+            </p>
+            <h1 className="text-2xl font-archivo-black font-bold">
+              How does it work?
+            </h1>
+            <p className="mb-6">
+              The app looks at the mint events of the contract (tokens sent from
+              the 0x0000... address) to obtain the tokenIds of the NFT
+              collection. This set of tokenIds is then used to make a call to
+              the Opensea API to update the metadata.
+            </p>
+          </div>
+        </div>
+      ) : (
+        ""
+      )}
       <ToastContainer />
     </div>
   );
