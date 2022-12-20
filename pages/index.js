@@ -9,10 +9,12 @@ import { InformationCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 export default function Home() {
   const [collectionSize, setCollectionSize] = useState(0);
   const [contractAddress, setContractAddress] = useState("");
+  const [offset, setOffset] = useState(0);
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(false);
   const [progressPercentage, setProgressPercentage] = useState("0%");
   const [infoOpen, setInfoOpen] = useState(false);
+  const [showOffset, setShowOffset] = useState(false);
 
   //TOAST MESSAGES
   const updateMetadataMessage = (projectName) =>
@@ -62,7 +64,7 @@ export default function Home() {
     }
   };
 
-  const updateMetaData = async () => {
+  const updateMetaData = async (offset) => {
     const result = await getCollectionDetailsFromContract();
     setLoading(true);
     if (result == undefined) {
@@ -71,14 +73,18 @@ export default function Home() {
       setCollectionSize(result?.totalSupply);
       try {
         updateMetadataMessage(result?.name);
-        for (let i = 0; i < result?.totalSupply; i++) {
-          const url = `https://api.opensea.io/api/v1/asset/${contractAddress}/${result.tokenIds[i]}?force_update=true`;
+        for (let i = 0; i < result?.totalSupply - Number(offset); i++) {
+          const url = `https://api.opensea.io/api/v1/asset/${contractAddress}/${
+            result.tokenIds[Number(offset) + i]
+          }?force_update=true`;
           const response = await fetch(url);
           if (response.status == 200) {
             setProgress(i);
           } else {
             try {
-              const url = `https://api.opensea.io/api/v1/asset/${contractAddress}/${result.tokenIds[i]}?force_update=true`;
+              const url = `https://api.opensea.io/api/v1/asset/${contractAddress}/${
+                result.tokenIds[Number(offset) + i]
+              }?force_update=true`;
               const response = await fetch(url);
               if (response.status == 200) {
                 setProgress(i);
@@ -107,9 +113,11 @@ export default function Home() {
     const _progressPercentage =
       collectionSize == 0
         ? "0"
-        : ((progress / collectionSize) * 100).toFixed(0).toString();
+        : (((progress + Number(offset)) / collectionSize) * 100)
+            .toFixed(0)
+            .toString();
     setProgressPercentage(_progressPercentage + "%");
-  }, [collectionSize, progress]);
+  }, [collectionSize, progress, offset]);
 
   return (
     <div
@@ -182,6 +190,38 @@ export default function Home() {
             onChange={(event) => setContractAddress(event.target.value)}
             disabled={loading}
           />
+          <div className="relative inline-block mb-3">
+            <input
+              checked={showOffset}
+              type="checkbox"
+              className="form-checkbox text-teal-500"
+              onChange={(e) => {
+                !e.target.checked && setOffset(0),
+                  setShowOffset(e.target.checked);
+              }}
+            ></input>
+            <label
+              className="pl-4 text-gray-600 mb-4 dark:text-white"
+              htmlFor="checkbox"
+            >
+              Set offset
+            </label>
+          </div>
+
+          {showOffset && (
+            <>
+              <input
+                placeholder="offset"
+                type="number"
+                className={`border mb-6 h-16 shadow-xl rounded-xl p-4 ${
+                  loading ? "dark:text-white" : ""
+                }`}
+                value={offset}
+                onChange={(event) => setOffset(event.target.value)}
+                disabled={loading}
+              />
+            </>
+          )}
 
           {loading ? (
             <button
@@ -210,14 +250,14 @@ export default function Home() {
           ) : (
             <button
               className="py-4 px-16 bg-indigo-500 text-white shadow-xl rounded-xl text-xl font-bold hover:bg-indigo-700 ease-in duration-100"
-              onClick={updateMetaData}
+              onClick={() => updateMetaData(offset)}
             >
               Refresh Metadata
             </button>
           )}
           <div className={loading ? "visible" : "invisible hidden"}>
             <p className="text-sm font-thin my-3 dark:text-white">
-              Updated {progress} of {collectionSize}
+              Updated {progress + Number(offset)} of {collectionSize}
             </p>
             <ProgressBar progressPercentage={progressPercentage} />
             <p className="text-xs font-thin mt-3 dark:text-white">
@@ -303,6 +343,11 @@ export default function Home() {
               Ethereum blockchain and hit the &quot;Refresh Metadata&quot;
               button. Make sure to keep the browser tab open while you&apos;re
               refreshing metadata.
+              <br />
+              <br />
+              Enter an offset value to specify a starting point for the metadata
+              refresh process. This can be useful if you need to resume the
+              refresh process.
             </p>
             <h1 className="text-2xl font-archivo-black font-bold">
               How does it work?
