@@ -66,6 +66,8 @@ export default function Home() {
 
   const updateMetaData = async (offset) => {
     const result = await getCollectionDetailsFromContract();
+    result.tokenIds = result.tokenIds.filter((n) => n >= offset);
+    result.totalSupply = result.tokenIds.length;
     setLoading(true);
     if (result == undefined) {
       setLoading(false);
@@ -73,18 +75,14 @@ export default function Home() {
       setCollectionSize(result?.totalSupply);
       try {
         updateMetadataMessage(result?.name);
-        for (let i = 0; i < result?.totalSupply - Number(offset); i++) {
-          const url = `https://api.opensea.io/api/v1/asset/${contractAddress}/${
-            result.tokenIds[Number(offset) + i]
-          }?force_update=true`;
+        for (let i = 0; i < result?.totalSupply; i++) {
+          const url = `https://api.opensea.io/api/v1/asset/${contractAddress}/${result.tokenIds[i]}?force_update=true`;
           const response = await fetch(url);
           if (response.status == 200) {
             setProgress(i);
           } else {
             try {
-              const url = `https://api.opensea.io/api/v1/asset/${contractAddress}/${
-                result.tokenIds[Number(offset) + i]
-              }?force_update=true`;
+              const url = `https://api.opensea.io/api/v1/asset/${contractAddress}/${result.tokenIds[i]}?force_update=true`;
               const response = await fetch(url);
               if (response.status == 200) {
                 setProgress(i);
@@ -204,7 +202,7 @@ export default function Home() {
               className="pl-4 text-gray-600 mb-4 dark:text-white"
               htmlFor="checkbox"
             >
-              Set offset
+              Set start tokenId from where to refresh
             </label>
           </div>
 
